@@ -3,16 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>World Class IoT Dashboard</title>
+<title>Smart IoT Dashboard</title>
 
+<!-- MQTT & Chart -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg1:#0f0c29;
-  --bg2:#302b63;
-  --bg3:#24243e;
+  --bg1:#0f2027;
+  --bg2:#203a43;
+  --bg3:#2c5364;
   --glass:rgba(255,255,255,0.08);
   --accent:#00f2fe;
   --ok:#2ecc71;
@@ -24,63 +26,34 @@
 body{
   margin:0;
   height:100vh;
-  font-family:'Inter',sans-serif;
+  font-family:'Poppins',sans-serif;
   background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
   display:flex;
   justify-content:center;
   align-items:center;
   color:white;
-  overflow:hidden;
-}
-
-/* Glow background */
-body::before{
-  content:"";
-  position:absolute;
-  width:600px;
-  height:600px;
-  background:radial-gradient(circle,var(--accent),transparent 70%);
-  opacity:0.15;
-  animation:float 8s infinite alternate;
-}
-
-@keyframes float{
-  from{transform:translate(-100px,-100px)}
-  to{transform:translate(100px,100px)}
 }
 
 .dashboard{
-  position:relative;
-  width:440px;
-  padding:32px;
+  width:480px;
+  padding:30px;
   border-radius:26px;
   background:var(--glass);
   backdrop-filter:blur(18px);
   box-shadow:0 0 60px rgba(0,0,0,0.8);
-  animation:appear 1s ease;
 }
 
-@keyframes appear{
-  from{opacity:0; transform:scale(0.95)}
-  to{opacity:1; transform:scale(1)}
-}
-
-.header{
+h1{
   text-align:center;
-  margin-bottom:25px;
-}
-
-.header h1{
   margin:0;
-  font-size:26px;
   font-weight:800;
-  letter-spacing:1px;
 }
 
-.header p{
-  margin:6px 0 0;
+.subtitle{
+  text-align:center;
   font-size:13px;
   opacity:.7;
+  margin-bottom:25px;
 }
 
 .cards{
@@ -90,25 +63,14 @@ body::before{
 }
 
 .card{
-  padding:20px;
-  border-radius:20px;
+  padding:18px;
+  border-radius:18px;
   background:rgba(255,255,255,0.06);
   text-align:center;
-  transition:.4s;
-}
-
-.card:hover{
-  transform:translateY(-6px);
-  box-shadow:0 0 25px rgba(0,242,254,0.4);
-}
-
-.icon{
-  font-size:28px;
 }
 
 .value{
-  margin-top:8px;
-  font-size:40px;
+  font-size:36px;
   font-weight:700;
 }
 
@@ -118,25 +80,21 @@ body::before{
 }
 
 .status{
-  margin-top:26px;
-  padding:18px;
-  border-radius:18px;
+  margin-top:20px;
+  padding:16px;
+  border-radius:16px;
   text-align:center;
   font-weight:700;
-  letter-spacing:1px;
-  transition:.4s;
 }
 
 .status.ok{
-  background:rgba(46,204,113,0.15);
+  background:rgba(46,204,113,0.2);
   color:var(--ok);
-  box-shadow:0 0 25px rgba(46,204,113,0.5);
 }
 
 .status.alert{
   background:rgba(255,71,87,0.25);
   color:var(--alert);
-  box-shadow:0 0 30px rgba(255,71,87,0.8);
   animation:pulse 1s infinite;
 }
 
@@ -146,24 +104,42 @@ body::before{
   100%{transform:scale(1)}
 }
 
-.alert-box{
-  display:none;
+.controls{
   margin-top:22px;
-  padding:18px;
-  border-radius:18px;
-  background:linear-gradient(135deg,#ff416c,#ff4b2b);
-  text-align:center;
-  font-weight:800;
-  animation:slide 0.5s ease;
 }
 
-@keyframes slide{
-  from{opacity:0; transform:translateY(10px)}
-  to{opacity:1; transform:translateY(0)}
+.controls label{
+  font-size:13px;
+}
+
+input[type=range]{
+  width:100%;
+}
+
+.buttons{
+  display:flex;
+  gap:12px;
+  margin-top:15px;
+}
+
+button{
+  flex:1;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.on{background:#2ecc71;color:white}
+.off{background:#ff4757;color:white}
+
+canvas{
+  margin-top:25px;
 }
 
 footer{
-  margin-top:26px;
+  margin-top:20px;
   text-align:center;
   font-size:11px;
   opacity:.6;
@@ -174,82 +150,112 @@ footer{
 <body>
 
 <div class="dashboard">
-
-  <div class="header">
-    <h1>🌐 WORLD CLASS IoT</h1>
-    <p>ESP32 • MQTT • Streaming Temps Réel</p>
-  </div>
+  <h1>🌐 Smart IoT</h1>
+  <div class="subtitle">ESP32 • LDR • MQTT • Temps réel</div>
 
   <div class="cards">
     <div class="card">
-      <div class="icon">🌞</div>
       <div class="value" id="lux">---</div>
-      <div class="unit">Luminosité (ADC)</div>
+      <div class="unit">Luminosité</div>
     </div>
 
     <div class="card">
-      <div class="icon">💡</div>
       <div class="value" id="etatTxt">---</div>
       <div class="unit">État</div>
     </div>
   </div>
 
-  <div class="status ok" id="status">
-    SYSTÈME NORMAL
+  <div class="status ok" id="status">SYSTÈME NORMAL</div>
+
+  <div class="controls">
+    <label>🎛️ Seuil luminosité : <b><span id="seuilVal">1500</span></b></label>
+    <input type="range" min="0" max="4095" value="1500"
+           oninput="setSeuil(this.value)">
   </div>
 
-  <div class="alert-box" id="alert">
-    🚨 OBSCURITÉ DÉTECTÉE 🚨
+  <div class="buttons">
+    <button class="on" onclick="setAlerte('ON')">🔔 Activer alerte</button>
+    <button class="off" onclick="setAlerte('OFF')">🔕 Désactiver alerte</button>
   </div>
+
+  <canvas id="graph" height="120"></canvas>
 
   <footer>
-    Projet IoT • Licence • 2026
+    Projet IoT – Dashboard temps réel
   </footer>
-
 </div>
 
 <script>
+// ===== MQTT =====
 const client = mqtt.connect(
   "wss://7083dd98527749e88e4f3bfece75ea0a.s1.eu.hivemq.cloud:8884/mqtt",
-  {
-    username: "esp32",
-    password: "Esp32mqtt"
-  }
+  { username:"esp32", password:"Esp32mqtt" }
 );
 
-client.on("connect", () => {
-  console.log("MQTT connecté");
+client.on("connect", ()=>{
   client.subscribe("maison/luminosite");
   client.subscribe("maison/etat");
-  client.subscribe("maison/alerte");
 });
 
-client.on("message", (topic, message) => {
+// ===== COMMANDES =====
+function setAlerte(val){
+  client.publish("maison/controle", val);
+}
+
+function setSeuil(val){
+  document.getElementById("seuilVal").innerText = val;
+  client.publish("maison/seuil", val.toString());
+}
+
+// ===== GRAPH =====
+const ctx = document.getElementById("graph");
+const chart = new Chart(ctx,{
+  type:"line",
+  data:{
+    labels:[],
+    datasets:[{
+      label:"Luminosité",
+      data:[],
+      borderColor:"#00f2fe",
+      tension:0.4
+    }]
+  },
+  options:{
+    animation:false,
+    scales:{y:{min:0,max:4095}}
+  }
+});
+
+// ===== MQTT DATA =====
+client.on("message",(topic,message)=>{
   const msg = message.toString();
 
-  if(topic === "maison/luminosite"){
-    document.getElementById("lux").innerText = msg;
+  if(topic==="maison/luminosite"){
+    const v = parseInt(msg);
+    document.getElementById("lux").innerText = v;
+
+    chart.data.labels.push("");
+    chart.data.datasets[0].data.push(v);
+    if(chart.data.labels.length>30){
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.update();
   }
 
-  if(topic === "maison/etat"){
+  if(topic==="maison/etat"){
     const st = document.getElementById("status");
     const txt = document.getElementById("etatTxt");
 
-    if(msg.includes("OBSCUR")){
-      txt.innerText = "NUIT";
-      st.className = "status alert";
-      st.innerText = "ALERTE OBSCURITÉ";
+    if(msg.includes("NUIT")){
+      txt.innerText="NUIT";
+      st.className="status alert";
+      st.innerText="OBSCURITÉ";
     }else{
-      txt.innerText = "JOUR";
-      st.className = "status ok";
-      st.innerText = "SYSTÈME NORMAL";
+      txt.innerText="JOUR";
+      st.className="status ok";
+      st.innerText="LUMIÈRE OK";
     }
-  }
-
-  if(topic === "maison/alerte"){
-    const a = document.getElementById("alert");
-    a.style.display = "block";
-    setTimeout(()=>a.style.display="none",5000);
   }
 });
 </script>
