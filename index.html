@@ -2,170 +2,256 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Dashboard Sécurité IoT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Class IoT Dashboard</title>
 
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <style>
-  body {
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    font-family: 'Segoe UI', Arial, sans-serif;
-    color: white;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+:root{
+  --bg1:#0f0c29;
+  --bg2:#302b63;
+  --bg3:#24243e;
+  --glass:rgba(255,255,255,0.08);
+  --accent:#00f2fe;
+  --ok:#2ecc71;
+  --alert:#ff4757;
+}
 
-  .dashboard {
-    background: rgba(0,0,0,0.65);
-    padding: 30px;
-    border-radius: 18px;
-    width: 360px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.7);
-    text-align: center;
-  }
+*{box-sizing:border-box}
 
-  h1 {
-    margin-bottom: 20px;
-  }
+body{
+  margin:0;
+  height:100vh;
+  font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  overflow:hidden;
+}
 
-  .card {
-    background: rgba(255,255,255,0.1);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-  }
+/* Glow background */
+body::before{
+  content:"";
+  position:absolute;
+  width:600px;
+  height:600px;
+  background:radial-gradient(circle,var(--accent),transparent 70%);
+  opacity:0.15;
+  animation:float 8s infinite alternate;
+}
 
-  .distance {
-    font-size: 40px;
-    font-weight: bold;
-  }
+@keyframes float{
+  from{transform:translate(-100px,-100px)}
+  to{transform:translate(100px,100px)}
+}
 
-  .etat {
-    font-size: 18px;
-    font-weight: bold;
-    margin-top: 5px;
-  }
+.dashboard{
+  position:relative;
+  width:440px;
+  padding:32px;
+  border-radius:26px;
+  background:var(--glass);
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 60px rgba(0,0,0,0.8);
+  animation:appear 1s ease;
+}
 
-  .ok { color: #2ecc71; }
-  .alert { color: #e74c3c; }
+@keyframes appear{
+  from{opacity:0; transform:scale(0.95)}
+  to{opacity:1; transform:scale(1)}
+}
 
-  button {
-    width: 100%;
-    padding: 14px;
-    margin-top: 10px;
-    font-size: 16px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-  }
+.header{
+  text-align:center;
+  margin-bottom:25px;
+}
 
-  .btn-on {
-    background: #27ae60;
-    color: white;
-  }
+.header h1{
+  margin:0;
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:1px;
+}
 
-  .btn-off {
-    background: #c0392b;
-    color: white;
-  }
+.header p{
+  margin:6px 0 0;
+  font-size:13px;
+  opacity:.7;
+}
 
-  .notif {
-    display: none;
-    background: #e74c3c;
-    padding: 12px;
-    border-radius: 10px;
-    margin-top: 15px;
-    animation: blink 1s infinite;
-  }
+.cards{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
 
-  @keyframes blink {
-    0% {opacity: 1;}
-    50% {opacity: 0.5;}
-    100% {opacity: 1;}
-  }
+.card{
+  padding:20px;
+  border-radius:20px;
+  background:rgba(255,255,255,0.06);
+  text-align:center;
+  transition:.4s;
+}
 
-  footer {
-    margin-top: 15px;
-    font-size: 12px;
-    opacity: 0.7;
-  }
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 0 25px rgba(0,242,254,0.4);
+}
+
+.icon{
+  font-size:28px;
+}
+
+.value{
+  margin-top:8px;
+  font-size:40px;
+  font-weight:700;
+}
+
+.unit{
+  font-size:13px;
+  opacity:.7;
+}
+
+.status{
+  margin-top:26px;
+  padding:18px;
+  border-radius:18px;
+  text-align:center;
+  font-weight:700;
+  letter-spacing:1px;
+  transition:.4s;
+}
+
+.status.ok{
+  background:rgba(46,204,113,0.15);
+  color:var(--ok);
+  box-shadow:0 0 25px rgba(46,204,113,0.5);
+}
+
+.status.alert{
+  background:rgba(255,71,87,0.25);
+  color:var(--alert);
+  box-shadow:0 0 30px rgba(255,71,87,0.8);
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.05)}
+  100%{transform:scale(1)}
+}
+
+.alert-box{
+  display:none;
+  margin-top:22px;
+  padding:18px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#ff416c,#ff4b2b);
+  text-align:center;
+  font-weight:800;
+  animation:slide 0.5s ease;
+}
+
+@keyframes slide{
+  from{opacity:0; transform:translateY(10px)}
+  to{opacity:1; transform:translateY(0)}
+}
+
+footer{
+  margin-top:26px;
+  text-align:center;
+  font-size:11px;
+  opacity:.6;
+}
 </style>
 </head>
 
 <body>
 
 <div class="dashboard">
-  <h1>🏠 Sécurité IoT</h1>
 
-  <div class="card">
-    <div>Distance mesurée</div>
-    <div class="distance" id="distance">-- cm</div>
+  <div class="header">
+    <h1>🌐 WORLD CLASS IoT</h1>
+    <p>ESP32 • MQTT • Streaming Temps Réel</p>
   </div>
 
-  <div class="card">
-    <div>État de l’alarme</div>
-    <div class="etat ok" id="etat">INCONNU</div>
+  <div class="cards">
+    <div class="card">
+      <div class="icon">🌞</div>
+      <div class="value" id="lux">---</div>
+      <div class="unit">Luminosité (ADC)</div>
+    </div>
+
+    <div class="card">
+      <div class="icon">💡</div>
+      <div class="value" id="etatTxt">---</div>
+      <div class="unit">État</div>
+    </div>
   </div>
 
-  <button class="btn-on" onclick="sendCmd('ENABLE')">ACTIVER ALARME</button>
-  <button class="btn-off" onclick="sendCmd('DISABLE')">DÉSACTIVER ALARME</button>
+  <div class="status ok" id="status">
+    SYSTÈME NORMAL
+  </div>
 
-  <div class="notif" id="notif">🚨 ALERTE : OBJET TROP PROCHE 🚨</div>
+  <div class="alert-box" id="alert">
+    🚨 OBSCURITÉ DÉTECTÉE 🚨
+  </div>
 
   <footer>
-    Dashboard IoT – Projet Licence
+    Projet IoT • Licence • 2026
   </footer>
+
 </div>
 
 <script>
-  const client = mqtt.connect(
-    "wss://7083dd98527749e88e4f3bfece75ea0a.s1.eu.hivemq.cloud:8884/mqtt",
-    {
-      username: "esp32",
-      password: "Esp32mqtt"
-    }
-  );
-
-  client.on("connect", () => {
-    console.log("Connecté à HiveMQ");
-    client.subscribe("maison/distance");
-    client.subscribe("maison/etat");
-    client.subscribe("maison/alerte");
-  });
-
-  client.on("message", (topic, message) => {
-    const msg = message.toString();
-
-    if (topic === "maison/distance") {
-      document.getElementById("distance").innerText =
-        parseFloat(msg).toFixed(1) + " cm";
-    }
-
-    if (topic === "maison/etat") {
-      const etat = document.getElementById("etat");
-      etat.innerText = msg;
-
-      if (msg.includes("ACTIVE")) {
-        etat.className = "etat ok";
-      } else {
-        etat.className = "etat";
-      }
-    }
-
-    if (topic === "maison/alerte") {
-      document.getElementById("notif").style.display = "block";
-      setTimeout(() => {
-        document.getElementById("notif").style.display = "none";
-      }, 5000);
-    }
-  });
-
-  function sendCmd(cmd) {
-    client.publish("maison/commande", cmd);
+const client = mqtt.connect(
+  "wss://7083dd98527749e88e4f3bfece75ea0a.s1.eu.hivemq.cloud:8884/mqtt",
+  {
+    username: "esp32",
+    password: "Esp32mqtt"
   }
+);
+
+client.on("connect", () => {
+  console.log("MQTT connecté");
+  client.subscribe("maison/luminosite");
+  client.subscribe("maison/etat");
+  client.subscribe("maison/alerte");
+});
+
+client.on("message", (topic, message) => {
+  const msg = message.toString();
+
+  if(topic === "maison/luminosite"){
+    document.getElementById("lux").innerText = msg;
+  }
+
+  if(topic === "maison/etat"){
+    const st = document.getElementById("status");
+    const txt = document.getElementById("etatTxt");
+
+    if(msg.includes("OBSCUR")){
+      txt.innerText = "NUIT";
+      st.className = "status alert";
+      st.innerText = "ALERTE OBSCURITÉ";
+    }else{
+      txt.innerText = "JOUR";
+      st.className = "status ok";
+      st.innerText = "SYSTÈME NORMAL";
+    }
+  }
+
+  if(topic === "maison/alerte"){
+    const a = document.getElementById("alert");
+    a.style.display = "block";
+    setTimeout(()=>a.style.display="none",5000);
+  }
+});
 </script>
 
 </body>
