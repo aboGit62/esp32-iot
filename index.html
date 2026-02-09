@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ESP32 – Commande à distance</title>
+
+  <!-- Librairie MQTT JS -->
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #141e30, #243b55);
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+    .card {
+      background: rgba(0,0,0,0.6);
+      padding: 30px;
+      border-radius: 15px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .status {
+      margin: 15px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .on {
+      background: #2ecc71;
+      color: white;
+    }
+    .off {
+      background: #e74c3c;
+      color: white;
+    }
+    footer {
+      margin-top: 15px;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>ESP32 IoT</h1>
+
+    <div class="status" id="status">État : inconnu</div>
+
+    <button class="on" onclick="sendCmd('ON')">ALLUMER</button>
+    <button class="off" onclick="sendCmd('OFF')">ÉTEINDRE</button>
+
+    <footer>
+      Contrôle à distance<br>
+      Projet Licence
+    </footer>
+  </div>
+
+<script>
+  // Connexion MQTT WebSocket (HiveMQ)
+  const client = mqtt.connect(
+    "wss://7083dd98527749e88e4f3bfece75ea0a.s1.eu.hivemq.cloud:8884/mqtt",
+    {
+      username: "esp32",
+      password: "Esp32mqtt"
+    }
+  );
+
+  client.on("connect", () => {
+    console.log("Connecté à HiveMQ (Web)");
+    client.subscribe("maison/etat");
+  });
+
+  client.on("message", (topic, message) => {
+    if (topic === "maison/etat") {
+      document.getElementById("status").innerText =
+        "État : " + message.toString();
+    }
+  });
+
+  function sendCmd(cmd) {
+    client.publish("maison/commande", cmd);
+  }
+</script>
+
+</body>
+</html>
