@@ -1,81 +1,126 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32 – Commande à distance</title>
+<meta charset="UTF-8">
+<title>Dashboard Sécurité IoT</title>
 
-  <!-- Librairie MQTT JS -->
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
-  <style>
-    body {
-      background: linear-gradient(135deg, #141e30, #243b55);
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-    }
-    .card {
-      background: rgba(0,0,0,0.6);
-      padding: 30px;
-      border-radius: 15px;
-      width: 320px;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-    }
-    h1 {
-      margin-bottom: 10px;
-    }
-    .status {
-      margin: 15px 0;
-      font-size: 18px;
-      font-weight: bold;
-    }
-    button {
-      width: 100%;
-      padding: 15px;
-      margin: 10px 0;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .on {
-      background: #2ecc71;
-      color: white;
-    }
-    .off {
-      background: #e74c3c;
-      color: white;
-    }
-    footer {
-      margin-top: 15px;
-      font-size: 12px;
-      opacity: 0.7;
-    }
-  </style>
+<style>
+  body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: white;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .dashboard {
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 18px;
+    width: 360px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.7);
+    text-align: center;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+  }
+
+  .distance {
+    font-size: 40px;
+    font-weight: bold;
+  }
+
+  .etat {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 5px;
+  }
+
+  .ok { color: #2ecc71; }
+  .alert { color: #e74c3c; }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .btn-on {
+    background: #27ae60;
+    color: white;
+  }
+
+  .btn-off {
+    background: #c0392b;
+    color: white;
+  }
+
+  .notif {
+    display: none;
+    background: #e74c3c;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 15px;
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    0% {opacity: 1;}
+    50% {opacity: 0.5;}
+    100% {opacity: 1;}
+  }
+
+  footer {
+    margin-top: 15px;
+    font-size: 12px;
+    opacity: 0.7;
+  }
+</style>
 </head>
 
 <body>
+
+<div class="dashboard">
+  <h1>🏠 Sécurité IoT</h1>
+
   <div class="card">
-    <h1>ESP32 IoT</h1>
-
-    <div class="status" id="status">État : inconnu</div>
-
-    <button class="on" onclick="sendCmd('ON')">ALLUMER</button>
-    <button class="off" onclick="sendCmd('OFF')">ÉTEINDRE</button>
-
-    <footer>
-      Contrôle à distance<br>
-      Projet Licence
-    </footer>
+    <div>Distance mesurée</div>
+    <div class="distance" id="distance">-- cm</div>
   </div>
 
+  <div class="card">
+    <div>État de l’alarme</div>
+    <div class="etat ok" id="etat">INCONNU</div>
+  </div>
+
+  <button class="btn-on" onclick="sendCmd('ENABLE')">ACTIVER ALARME</button>
+  <button class="btn-off" onclick="sendCmd('DISABLE')">DÉSACTIVER ALARME</button>
+
+  <div class="notif" id="notif">🚨 ALERTE : OBJET TROP PROCHE 🚨</div>
+
+  <footer>
+    Dashboard IoT – Projet Licence
+  </footer>
+</div>
+
 <script>
-  // Connexion MQTT WebSocket (HiveMQ)
   const client = mqtt.connect(
     "wss://7083dd98527749e88e4f3bfece75ea0a.s1.eu.hivemq.cloud:8884/mqtt",
     {
@@ -85,14 +130,36 @@
   );
 
   client.on("connect", () => {
-    console.log("Connecté à HiveMQ (Web)");
+    console.log("Connecté à HiveMQ");
+    client.subscribe("maison/distance");
     client.subscribe("maison/etat");
+    client.subscribe("maison/alerte");
   });
 
   client.on("message", (topic, message) => {
+    const msg = message.toString();
+
+    if (topic === "maison/distance") {
+      document.getElementById("distance").innerText =
+        parseFloat(msg).toFixed(1) + " cm";
+    }
+
     if (topic === "maison/etat") {
-      document.getElementById("status").innerText =
-        "État : " + message.toString();
+      const etat = document.getElementById("etat");
+      etat.innerText = msg;
+
+      if (msg.includes("ACTIVE")) {
+        etat.className = "etat ok";
+      } else {
+        etat.className = "etat";
+      }
+    }
+
+    if (topic === "maison/alerte") {
+      document.getElementById("notif").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("notif").style.display = "none";
+      }, 5000);
     }
   });
 
